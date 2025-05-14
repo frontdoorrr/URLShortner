@@ -3,6 +3,7 @@ package handlers
 
 import (
 	"net/http"
+	"net/url"
 	"url-shortner/storage"
 	"url-shortner/utils"
 
@@ -17,6 +18,14 @@ type URLResponse struct {
 	ShortURL string `json:"short_url"`
 }
 
+func isValidURL(rawURL string) bool {
+	parsedURL, err := url.ParseRequestURI(rawURL)
+	if err != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") {
+		return false
+	}
+	return true
+}
+
 // ShortenURL은 URL 단축 요청을 처리합니다.
 func ShortenURL(c *gin.Context) {
 	var request URLRequest
@@ -27,6 +36,11 @@ func ShortenURL(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid request body",
 		})
+		return
+	}
+
+	if !isValidURL(request.OriginalURL) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid URL format. URL must start with http:// or https://"})
 		return
 	}
 
